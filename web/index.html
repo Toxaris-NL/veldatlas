@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VeldAtlas</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cm-chessboard@8/assets/chessboard.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cm-chessboard@8/assets/extensions/markers/markers.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cm-chessboard@8/assets/extensions/promotion-dialog/promotion-dialog.css">
+</head>
+<body>
+  <div class="layout">
+    <section class="board-panel">
+      <div id="board"></div>
+
+      <div class="toolbar">
+        <button id="newGameBtn">New game</button>
+        <button id="playVsEngineBtn">New vs engine</button>
+        <button id="undoBtn">Undo</button>
+        <button id="redoBtn">Redo</button>
+        <button id="recommendBtn">Refresh recommendations</button>
+        <button id="engineMoveBtn">Engine move</button>
+      </div>
+
+      <div class="toolbar">
+        <select id="engineSelect"></select>
+        <select id="difficultySelect">
+          <option value="easy">easy</option>
+          <option value="medium" selected>medium</option>
+          <option value="hard">hard</option>
+          <option value="maia-default">maia-default</option>
+        </select>
+        <select id="humanColorSelect">
+          <option value="white" selected>human white</option>
+          <option value="black">human black</option>
+        </select>
+        <input id="topNInput" type="number" min="1" max="20" value="5" />
+      </div>
+
+      <div class="toolbar">
+        <button id="loadSampleBtn">Load sample PGN</button>
+        <button id="loadPgnBtn">Replay pasted PGN</button>
+        <button id="settingsBtn">Load settings</button>
+        <button id="saveSettingsBtn">Save settings</button>
+      </div>
+
+      <textarea id="pgnInput" rows="8" placeholder="Paste a PGN here to replay it with move list and analysis..."></textarea>
+    </section>
+
+    <section class="side-panel">
+      <h1>VeldAtlas</h1>
+
+      <div class="card">
+        <h2>Game</h2>
+        <pre id="gameInfo"></pre>
+      </div>
+
+      <div class="card">
+        <h2>Moves</h2>
+        <ol id="moves"></ol>
+      </div>
+
+      <div class="card">
+        <h2>Recommendations</h2>
+        <pre id="recommendations"></pre>
+      </div>
+
+      <div class="card">
+        <h2>Replay</h2>
+        <div class="toolbar toolbar-small">
+          <button id="replayPrevBtn">Prev</button>
+          <button id="replayNextBtn">Next</button>
+        </div>
+        <pre id="replayInfo"></pre>
+      </div>
+
+      <div class="card">
+        <h2>Settings</h2>
+        <textarea id="settingsJson" rows="18"></textarea>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
