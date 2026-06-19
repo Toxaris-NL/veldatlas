@@ -1,19 +1,20 @@
 package httpapi
 
 import (
-    "encoding/json"
-    "errors"
-    "io"
-    "net/http"
-    "os"
-    "path"
-    "path/filepath"
-    "strconv"
-    "strings"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
 
-    "github.com/yourname/veldatlas/internal/config"
-    "github.com/yourname/veldatlas/internal/domain"
-    "github.com/yourname/veldatlas/internal/service"
+	"github.com/Toxaris-Nl/veldatlas/internal/config"
+	"github.com/Toxaris-Nl/veldatlas/internal/domain"
+	"github.com/Toxaris-Nl/veldatlas/internal/service"
+
 )
 
 // API owns the handler methods and the application service dependency.
@@ -86,7 +87,7 @@ func (api *API) handleSamplePGN(w http.ResponseWriter, r *http.Request) {
 func (api *API) handleSettings(w http.ResponseWriter, r *http.Request) {
     switch r.Method {
     case http.MethodGet:
-        writeJSON(w, http.StatusOK, s.svc.Settings())
+        writeJSON(w, http.StatusOK, api.svc.Settings())
 
     case http.MethodPost:
         var cfg config.Settings
@@ -95,12 +96,12 @@ func (api *API) handleSettings(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        if err := s.svc.SaveSettings(cfg); err != nil {
+        if err := api.svc.SaveSettings(cfg); err != nil {
             writeError(w, http.StatusBadRequest, err.Error())
             return
         }
 
-        writeJSON(w, http.StatusOK, s.svc.Settings())
+        writeJSON(w, http.StatusOK, api.svc.Settings())
 
     default:
         writeError(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -113,7 +114,13 @@ func (api *API) handleNewGame(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    ss, err := s.svc.NewGame()
+    var body struct {
+        FEN string `json:"fen"`
+    }
+    // Ignore decode errors — body is optional
+    _ = json.NewDecoder(r.Body).Decode(&body)
+
+    ss, err := api.svc.NewGame(strings.TrimSpace(body.FEN))
     if err != nil {
         writeError(w, http.StatusInternalServerError, err.Error())
         return
@@ -139,7 +146,7 @@ func (api *API) handleNewVsEngine(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    ss, err := s.svc.StartEngineGame(body.Engine, body.HumanColor, body.Difficulty)
+    ss, err := api.svc.StartEngineGame(body.Engine, body.HumanColor, body.Difficulty)
     if err != nil {
         writeServiceError(w, err)
         return
@@ -160,7 +167,7 @@ func (api *API) handleGame(w http.ResponseWriter, r *http.Request) {
     id := parts[0]
 
     if len(parts) == 1 && r.Method == http.MethodGet {
-        ss, err := s.svc.Get(id)
+        ss, err := api.svc.Get(id)
         if err != nil {
             writeServiceError(w, err)
             return
@@ -176,21 +183,21 @@ func (api *API) handleGame(w http.ResponseWriter, r *http.Request) {
 
     switch parts[1] {
     case "move":
-        s.handleMove(w, r, id)
+        api.handleMove(w, r, id)
     case "undo":
-        s.handleUndo(w, r, id)
+        api.handleUndo(w, r, id)
     case "redo":
-        s.handleRedo(w, r, id)
+        api.handleRedo(w, r, id)
     case "legal":
-        s.handleLegal(w, r, id)
+        api.handleLegal(w, r, id)
     case "analysis":
-        s.handleAnalysis(w, r, id)
+        api.handleAnalysis(w, r, id)
     case "recommendations":
-        s.handleRecommendations(w, r, id)
+        api.handleRecommendations(w, r, id)
     case "engine-move":
-        s.handleEngineMove(w, r, id)
+        api.handleEngineMove(w, r, id)
     case "book":
-        s.handleBook(w, r, id)
+        api.handleBook(w, r, id)
     default:
         writeError(w, http.StatusNotFound, "unknown endpoint")
     }
@@ -211,7 +218,7 @@ func (api *API) handleMove(w http.ResponseWriter, r *http.Request, id string) {
         return
     }
 
-    ss, err := s.svc.Play(id, body.Move)
+    ss, err := api.svc.Play(id, body.Move)
     if err != nil {
         writeServiceError(w, err)
         return
@@ -226,7 +233,7 @@ func (api *API) handleUndo(w http.ResponseWriter, r *http.Request, id string) {
         return
     }
 
-    ss, err := s.svc.Undo(id)
+    ss, err := api.svc.Undo(id)
     if err != nil {
         writeServiceError(w, err)
         return
@@ -241,7 +248,7 @@ func (api *API) handleRedo(w http.ResponseWriter, r *http.Request, id string) {
         return
     }
 
-    ss, err := s.svc.Redo(id)
+    ss, err := api.svc.Redo(id)
     if err != nil {
         writeServiceError(w, err)
         return
@@ -257,7 +264,7 @@ func (api *API) handleLegal(w http.ResponseWriter, r *http.Request, id string) {
     }
 
     square := strings.TrimSpace(r.URL.Query().Get("square"))
-    moves, err := s.svc.Legal(id, square)
+    moves, err := api.svc.Legal(id, square)
     if err != nil {
         writeServiceError(w, err)
         return
@@ -280,7 +287,7 @@ func (api *API) handleAnalysis(w http.ResponseWriter, r *http.Request, id string
         return
     }
 
-    lines, err := s.svc.Analyze(id, req)
+    lines, err := api.svc.Analyze(id, req)
     if err != nil {
         writeServiceError(w, err)
         return
@@ -307,7 +314,7 @@ func (api *API) handleRecommendations(w http.ResponseWriter, r *http.Request, id
         }
     }
 
-    panel, err := s.svc.Recommendations(id, req)
+    panel, err := api.svc.Recommendations(id, req)
     if err != nil {
         writeServiceError(w, err)
         return
@@ -322,7 +329,7 @@ func (api *API) handleEngineMove(w http.ResponseWriter, r *http.Request, id stri
         return
     }
 
-    ss, err := s.svc.EngineMove(id)
+    ss, err := api.svc.EngineMove(id)
     if err != nil {
         writeServiceError(w, err)
         return
@@ -337,7 +344,7 @@ func (api *API) handleBook(w http.ResponseWriter, r *http.Request, id string) {
         return
     }
 
-    items, err := s.svc.Book(id)
+    items, err := api.svc.Book(id)
     if err != nil {
         writeServiceError(w, err)
         return
@@ -362,7 +369,7 @@ func (api *API) handleLoadReplay(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    replay, err := s.svc.LoadReplay(string(body))
+    replay, err := api.svc.LoadReplay(string(body))
     if err != nil {
         writeError(w, http.StatusBadRequest, err.Error())
         return

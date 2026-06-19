@@ -1,11 +1,12 @@
 package domain
 
-import "github.com/yourname/veldatlas/internal/config"
+import "github.com/Toxaris-Nl/veldatlas/internal/config"
 
 type RulesEngine interface {
 	NewGame() (Snapshot, error)
-	ApplyMoves(moves []string) (Snapshot, error)
-	LegalMoves(moves []string, square string) ([]string, error)
+	NewGameFromFEN(fen string) (Snapshot, error)
+ApplyMoves(moves []string, startFEN string) (Snapshot, error)
+LegalMoves(moves []string, square string, startFEN string) ([]string, error)
 	LoadPGN(raw string) (Replay, error)
 }
 

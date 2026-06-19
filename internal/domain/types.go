@@ -9,6 +9,7 @@ type Snapshot struct {
     Headers    map[string]string `json:"headers,omitempty"`
     Moves      []string          `json:"moves,omitempty"`
     MoveLabels []string          `json:"moveLabels,omitempty"`
+    StartFEN    string            `json:"startFen,omitempty"`
 }
 
 type SessionSettings struct {
@@ -24,6 +25,7 @@ type Session struct {
     RedoMoves []string        `json:"redoMoves,omitempty"`
     Snapshot  Snapshot        `json:"snapshot"`
     Mode      SessionSettings `json:"mode"`
+    StartFEN  string          `json:"startFen,omitempty"`
 }
 
 type AnalysisRequest struct {

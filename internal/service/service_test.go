@@ -4,8 +4,8 @@ import (
     "fmt"
     "testing"
 
-    "github.com/yourname/veldatlas/internal/config"
-    "github.com/yourname/veldatlas/internal/domain"
+    "github.com/Toxaris-Nl/veldatlas/internal/config"
+    "github.com/Toxaris-Nl/veldatlas/internal/domain"
 )
 
 type fakeRules struct{}

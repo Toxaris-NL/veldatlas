@@ -6,8 +6,8 @@ import (
     "errors"
     "sync"
 
-    "github.com/yourname/veldatlas/internal/config"
-    "github.com/yourname/veldatlas/internal/domain"
+    "github.com/Toxaris-Nl/veldatlas/internal/config"
+    "github.com/Toxaris-Nl/veldatlas/internal/domain"
 )
 
 var ErrSessionNotFound = errors.New("session not found")
@@ -48,13 +48,26 @@ func New(rules domain.RulesEngine, analysis domain.AnalysisEngine, book domain.O
 func (s *Service) Settings() config.Settings { return s.settings.Get() }
 func (s *Service) SaveSettings(cfg config.Settings) error { return s.settings.Save(cfg) }
 
-func (s *Service) NewGame() (*domain.Session, error) {
-    snap, err := s.rules.NewGame()
+func (s *Service) NewGame(fen string) (*domain.Session, error) {
+    var snap domain.Snapshot
+    var err error
+
+    if fen != "" {
+        snap, err = s.rules.NewGameFromFEN(fen)
+    } else {
+        snap, err = s.rules.NewGame()
+    }
     if err != nil {
         return nil, err
     }
+
     ss := &sessionState{
-        Session:       &domain.Session{ID: newID(), Snapshot: snap, Moves: []string{}},
+        Session: &domain.Session{
+            ID:       newID(),
+            Snapshot: snap,
+            Moves:    []string{},
+            StartFEN: fen, // store it here
+        },
         AnalysisCache: map[analysisKey][]domain.AnalysisLine{},
     }
     s.mu.Lock()
@@ -64,7 +77,7 @@ func (s *Service) NewGame() (*domain.Session, error) {
 }
 
 func (s *Service) StartEngineGame(engineName, humanColor, difficulty string) (*domain.Session, error) {
-    ss, err := s.NewGame()
+    ss, err := s.NewGame("")
     if err != nil {
         return nil, err
     }
@@ -106,7 +119,7 @@ func (s *Service) Play(id, move string) (*domain.Session, error) {
     }
 
     moves := append(append([]string(nil), st.Session.Moves...), move)
-    snap, err := s.rules.ApplyMoves(moves)
+    snap, err := s.rules.ApplyMoves(moves, st.Session.StartFEN)
     if err != nil {
         s.mu.Unlock()
         return nil, err
@@ -180,7 +193,7 @@ func (s *Service) PlayNoReply(id, move string) (*domain.Session, error) {
     }
 
     moves := append(append([]string(nil), st.Session.Moves...), move)
-    snap, err := s.rules.ApplyMoves(moves)
+    snap, err := s.rules.ApplyMoves(moves, st.Session.StartFEN)
     if err != nil {
         return nil, err
     }
@@ -207,7 +220,7 @@ func (s *Service) Undo(id string) (*domain.Session, error) {
     st.Session.RedoMoves = append([]string{last}, st.Session.RedoMoves...)
     st.Session.Moves = append([]string(nil), st.Session.Moves[:len(st.Session.Moves)-1]...)
 
-    snap, err := s.rules.ApplyMoves(st.Session.Moves)
+    snap, err := s.rules.ApplyMoves(st.Session.Moves, st.Session.StartFEN)
     if err != nil {
         return nil, err
     }
@@ -231,7 +244,7 @@ func (s *Service) Redo(id string) (*domain.Session, error) {
     st.Session.RedoMoves = append([]string(nil), st.Session.RedoMoves[1:]...)
 
     moves := append(append([]string(nil), st.Session.Moves...), mv)
-    snap, err := s.rules.ApplyMoves(moves)
+    snap, err := s.rules.ApplyMoves(moves, st.Session.StartFEN)
     if err != nil {
         return nil, err
     }
@@ -246,7 +259,7 @@ func (s *Service) Legal(id, square string) ([]string, error) {
     if err != nil {
         return nil, err
     }
-    return s.rules.LegalMoves(ss.Moves, square)
+    return s.rules.LegalMoves(ss.Moves, square, ss.StartFEN)
 }
 
 func (s *Service) Analyze(id string, req domain.AnalysisRequest) ([]domain.AnalysisLine, error) {

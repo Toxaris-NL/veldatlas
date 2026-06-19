@@ -1,0 +1,15 @@
+<section id="pageSettings" class="page">
+  <div class="card settings-page-card">
+    <div class="page-header">
+      <div><h1>Settings</h1><p class="muted">Grouped settings form with backend hookup when available.</p></div>
+      <div class="toolbar"><button id="settingsReloadBtn">Reload</button><button id="saveSettingsBtn">Save</button><button id="backToBoardBtn">Back</button></div>
+    </div>
+    <form id="settingsForm" class="settings-form">
+      <section class="form-card"><h2>General</h2><div class="form-grid two"><label>Backend address<input id="cfgAddr"></label><label>Theme<select id="cfgTheme"><option value="light">light</option><option value="dark">dark</option></select></label></div></section>
+      <section class="form-card"><h2>Opening book</h2><label>Polyglot book path<input id="cfgBookPath"></label></section>
+      <section class="form-card"><h2>UI defaults</h2><div class="form-grid two"><label>Default analysis engine<select id="cfgDefaultAnalysisEngine"></select></label><label>Default play engine<select id="cfgDefaultPlayEngine"></select></label></div><div class="form-grid two"><label class="checkbox-row"><input id="cfgShowBook" type="checkbox"><span>Show book by default</span></label><label class="checkbox-row"><input id="cfgShowAnalysis" type="checkbox"><span>Show analysis by default</span></label></div></section>
+      <section class="form-card"><h2>Stockfish</h2><div class="form-grid two"><label class="checkbox-row"><input id="cfgStockfishEnabled" type="checkbox"><span>Enabled</span></label><label class="checkbox-row"><input id="cfgStockfishForPlay" type="checkbox"><span>For play-vs-engine</span></label></div><div class="form-grid two"><label>Executable path<input id="cfgStockfishPath"></label><label>Difficulty<select id="cfgStockfishDifficulty"><option value="easy">easy</option><option value="medium">medium</option><option value="hard">hard</option></select></label></div><label>Options<textarea id="cfgStockfishOptions" rows="6"></textarea></label></section>
+      <section class="form-card"><h2>Maia / lc0 wrapper</h2><div class="form-grid two"><label class="checkbox-row"><input id="cfgMaiaEnabled" type="checkbox"><span>Enabled</span></label><label class="checkbox-row"><input id="cfgMaiaForPlay" type="checkbox"><span>For play-vs-engine</span></label></div><div class="form-grid two"><label>Executable path<input id="cfgMaiaPath"></label><label>Difficulty<select id="cfgMaiaDifficulty"><option value="maia-default">maia-default</option><option value="easy">easy</option><option value="medium">medium</option><option value="hard">hard</option></select></label></div><label>Options<textarea id="cfgMaiaOptions" rows="6"></textarea></label></section>
+    </form>
+  </div>
+</section>

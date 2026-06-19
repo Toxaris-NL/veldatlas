@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/yourname/veldatlas/internal/adapters/corentings"
-	"github.com/yourname/veldatlas/internal/adapters/opening"
-	"github.com/yourname/veldatlas/internal/config"
-	"github.com/yourname/veldatlas/internal/httpapi"
-	"github.com/yourname/veldatlas/internal/service"
+	"github.com/Toxaris-Nl/veldatlas/internal/adapters/corentings"
+	"github.com/Toxaris-Nl/veldatlas/internal/adapters/opening"
+	"github.com/Toxaris-Nl/veldatlas/internal/config"
+	"github.com/Toxaris-Nl/veldatlas/internal/httpapi"
+	"github.com/Toxaris-Nl/veldatlas/internal/service"
 )
 
 func main() {

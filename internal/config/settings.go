@@ -74,23 +74,23 @@ func DefaultSettings() Settings {
 }
 
 func LoadOrCreateDefault(path string) (Settings, error) {
-	if _, err := os.Stat(path); err == nil {
-		return Load(path)
-	}
-	cfg := DefaultSettings()
-	if err := Save(path, cfg); err != nil {
-		return Settings{}, err
-	}
-	return cfg, nil
+    if _, err := os.Stat(path); err == nil {
+        return LoadSettings(path)  // updated call
+    }
+    cfg := DefaultSettings()
+    if err := Save(path, cfg); err != nil {
+        return Settings{}, err
+    }
+    return cfg, nil
 }
 
-func Load(path string) (Settings, error) {
-	cfg := DefaultSettings()
-	if _, err := toml.DecodeFile(path, &cfg); err != nil {
-		return Settings{}, err
-	}
-	normalize(&cfg)
-	return cfg, nil
+func LoadSettings(path string) (Settings, error) {
+    cfg := DefaultSettings()
+    if _, err := toml.DecodeFile(path, &cfg); err != nil {
+        return Settings{}, err
+    }
+    normalize(&cfg)
+    return cfg, nil
 }
 
 func Save(path string, cfg Settings) error {

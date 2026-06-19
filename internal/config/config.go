@@ -13,7 +13,7 @@ type Config struct {
 	PolyglotBookPath string
 }
 
-func Load() Config {
+func LoadFromEnv() Config {
 	addr := strings.TrimSpace(os.Getenv("VELDATLAS_ADDR"))
 	if addr == "" {
 		addr = ":8080"

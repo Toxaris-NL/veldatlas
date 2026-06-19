@@ -6,7 +6,7 @@ import (
     "path/filepath"
     "testing"
 
-    "github.com/yourname/veldatlas/internal/domain"
+    "github.com/Toxaris-Nl/veldatlas/internal/domain"
 )
 
 // Standard Polyglot starting-position hash.

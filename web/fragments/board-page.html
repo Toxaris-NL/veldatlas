@@ -1,0 +1,53 @@
+<header class="topbar">
+  <div class="mode-strip">
+    <span id="currentModeBadge" class="badge">Player vs Player</span>
+    <select id="engineSelect"></select>
+    <select id="difficultySelect">
+      <option value="easy">easy</option>
+      <option value="medium" selected>medium</option>
+      <option value="hard">hard</option>
+      <option value="maia-default">maia-default</option>
+    </select>
+    <select id="humanColorSelect">
+      <option value="white" selected>human white</option>
+      <option value="black">human black</option>
+    </select>
+    <input id="topNInput" type="number" min="1" max="20" value="5">
+  </div>
+  <div class="action-strip">
+    <button id="newGameBtn">New game</button>
+    <button id="undoBtn">Undo</button>
+    <button id="redoBtn">Redo</button>
+    <button id="recommendBtn">Recommendations</button>
+    <button id="engineMoveBtn">Engine move</button>
+  </div>
+</header>
+<section id="pageMain" class="page active">
+  <div class="workspace">
+    <section class="board-column">
+      <div id="board"></div>
+      <div id="clockPanel" class="card"><h2>Clock</h2><div class="clock-grid"><div><strong>White</strong><div id="clockWhite">--:--</div></div><div><strong>Black</strong><div id="clockBlack">--:--</div></div></div></div>
+    </section>
+    <section class="info-column">
+      <div id="gameInfoPanel" class="card"><h2>Game information</h2><pre id="gameInfo"></pre></div>
+      <div id="moveListPanel" class="card"><h2>Move list</h2><ol id="moves"></ol></div>
+      <div id="recommendationsPanel" class="card"><h2>Recommendations</h2><pre id="recommendations"></pre></div>
+      <div id="analysisPanel" class="card"><h2>Analysis</h2><pre id="analysis"></pre></div>
+      <div id="replayPanel" class="card"><h2>Replay</h2><div class="toolbar"><button id="replayPrevBtn">Prev</button><button id="replayNextBtn">Next</button></div><pre id="replayInfo"></pre></div>
+      <div id="pgnDetailsPanel" class="card">
+        <h2>PGN details</h2>
+        <div class="pgn-grid">
+          <label>Event<input id="pgnEvent" readonly></label>
+          <label>Site<input id="pgnSite" readonly></label>
+          <label>Date<input id="pgnDate" readonly></label>
+          <label>Round<input id="pgnRound" readonly></label>
+          <label>White<input id="pgnWhite" readonly></label>
+          <label>Black<input id="pgnBlack" readonly></label>
+          <label>Result<input id="pgnResult" readonly></label>
+          <label>ECO<input id="pgnEco" readonly></label>
+        </div>
+        <div class="pgn-moves-wrap"><h3>Moves</h3><div id="pgnMovesList" class="pgn-moves-list"></div></div>
+      </div>
+    </section>
+  </div>
+</section>

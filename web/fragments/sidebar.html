@@ -1,0 +1,39 @@
+<div class="sidebar-header">
+  <button id="sidebarToggle" class="icon-button" aria-label="Toggle menu">☰</button>
+  <span class="brand-text">VeldAtlas</span>
+</div>
+<nav class="menu">
+  <section class="menu-group">
+    <button class="menu-item menu-parent active" data-target="menu-new"><span class="icon">♟</span><span class="label">New</span><span class="caret">▾</span></button>
+    <div id="menu-new" class="submenu open">
+      <button class="submenu-item" id="menuNewVsEngine"><span class="icon">🤖</span><span class="label">Player against engine</span></button>
+      <button class="submenu-item" id="menuNewAnalysis"><span class="icon">🔍</span><span class="label">Game analysis</span></button>
+      <button class="submenu-item" id="menuNewPvP"><span class="icon">👥</span><span class="label">Player against player</span></button>
+    </div>
+  </section>
+  <section class="menu-group">
+    <button class="menu-item menu-parent" data-target="menu-open"><span class="icon">📂</span><span class="label">Open</span><span class="caret">▸</span></button>
+    <div id="menu-open" class="submenu">
+      <button class="submenu-item" id="menuOpenSample"><span class="icon">📚</span><span class="label">Open sample</span></button>
+      <button class="submenu-item" id="menuOpenPgn"><span class="icon">🎞</span><span class="label">Open PGN</span></button>
+      <button class="submenu-item" id="menuEnterFen"><span class="icon">🧩</span><span class="label">Enter FEN</span></button>
+    </div>
+  </section>
+  <section class="menu-group">
+    <button class="menu-item menu-parent" data-target="menu-view"><span class="icon">🪟</span><span class="label">View</span><span class="caret">▸</span></button>
+    <div id="menu-view" class="submenu">
+      <label class="submenu-check"><input type="checkbox" data-view-target="clockPanel" checked><span class="label">Clock</span></label>
+      <label class="submenu-check"><input type="checkbox" data-view-target="moveListPanel" checked><span class="label">Move list</span></label>
+      <label class="submenu-check"><input type="checkbox" data-view-target="recommendationsPanel" checked><span class="label">Recommendations</span></label>
+      <label class="submenu-check"><input type="checkbox" data-view-target="analysisPanel" checked><span class="label">Analysis</span></label>
+      <label class="submenu-check"><input type="checkbox" data-view-target="replayPanel" checked><span class="label">Replay</span></label>
+      <label class="submenu-check"><input type="checkbox" data-view-target="gameInfoPanel" checked><span class="label">Game information</span></label>
+      <label class="submenu-check"><input type="checkbox" data-view-target="pgnDetailsPanel" checked><span class="label">PGN details</span></label>
+    </div>
+  </section>
+  <section class="menu-group">
+    <button class="menu-item" id="menuSettings"><span class="icon">⚙</span><span class="label">Settings</span></button>
+    <button class="menu-item" id="menuToggleTheme"><span class="icon">🌓</span><span class="label">Theme</span></button>
+    <button class="menu-item" id="menuAbout"><span class="icon">ℹ</span><span class="label">About</span></button>
+  </section>
+</nav>

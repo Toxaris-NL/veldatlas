@@ -7,9 +7,9 @@ import (
     "net/http/httptest"
     "testing"
 
-    "github.com/yourname/veldatlas/internal/config"
-    "github.com/yourname/veldatlas/internal/domain"
-    "github.com/yourname/veldatlas/internal/service"
+    "github.com/Toxaris-Nl/veldatlas/internal/config"
+    "github.com/Toxaris-Nl/veldatlas/internal/domain"
+    "github.com/Toxaris-Nl/veldatlas/internal/service"
 )
 
 type fakeRules struct{}

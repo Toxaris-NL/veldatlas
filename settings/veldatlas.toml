@@ -1,0 +1,31 @@
+addr = ":8080"
+
+[book]
+  path = ""
+
+[engines]
+  [engines.maia]
+    enabled = false
+    path = ""
+    difficulty = "maia-default"
+    for_play = true
+    [engines.maia.options]
+      Threads = "1"
+  [engines.stockfish]
+    enabled = true
+    path = ""
+    difficulty = "medium"
+    for_play = true
+    [engines.stockfish.options]
+      Hash = "128"
+      MultiPV = "3"
+      "Skill Level" = "5"
+      Threads = "2"
+      UCI_Elo = "1600"
+      UCI_LimitStrength = "true"
+
+[ui]
+  default_analysis_engine = "stockfish"
+  default_play_engine = "stockfish"
+  show_book = true
+  show_analysis = true

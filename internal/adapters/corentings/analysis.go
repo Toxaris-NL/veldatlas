@@ -10,8 +10,8 @@ import (
 	chess "github.com/corentings/chess/v2"
 	"github.com/corentings/chess/v2/uci"
 
-	"github.com/yourname/veldatlas/internal/config"
-	"github.com/yourname/veldatlas/internal/domain"
+	"github.com/Toxaris-Nl/veldatlas/internal/config"
+	"github.com/Toxaris-Nl/veldatlas/internal/domain"
 )
 
 type AnalysisAdapter struct{}
@@ -26,7 +26,7 @@ func (a *AnalysisAdapter) Analyze(snapshot domain.Snapshot, engine config.Engine
 	if err := eng.Run(uci.CmdPosition{Position: buildPosition(snapshot)}, a.goCommand(req, engine)); err != nil { return nil, err }
 	res := eng.SearchResults()
 	line := domain.AnalysisLine{Engine: req.Engine, Raw: fmt.Sprintf("%+v", res)}
-	if res != nil && res.BestMove != nil { line.BestMove = res.BestMove.String() }
+	if res.BestMove != nil { line.BestMove = res.BestMove.String() }
 	return []domain.AnalysisLine{line}, nil
 }
 
@@ -51,7 +51,6 @@ func (a *AnalysisAdapter) goCommand(req domain.AnalysisRequest, engine config.En
 	cmd := uci.CmdGo{}
 	if req.Depth > 0 { cmd.Depth = req.Depth; return cmd }
 	if req.Nodes > 0 { cmd.Nodes = req.Nodes; return cmd }
-	// Difficulty presets are intentionally simple.
 	switch strings.ToLower(strings.TrimSpace(firstNonEmpty(req.Difficulty, engine.Difficulty))) {
 	case "easy":
 		cmd.MoveTime = 100 * time.Millisecond
@@ -88,9 +87,14 @@ func mergedOptions(engine config.EngineConfig, req domain.AnalysisRequest) map[s
 }
 
 func buildPosition(snapshot domain.Snapshot) *chess.Position {
-	if snapshot.FEN == "" { return chess.NewGame().Position() }
-	g := chess.NewGame(chess.UseFEN(snapshot.FEN))
-	return g.Position()
+	if snapshot.FEN == "" {
+		return chess.NewGame().Position()
+	}
+	fenFunc, err := chess.FEN(snapshot.FEN)
+	if err != nil {
+		return chess.NewGame().Position()
+	}
+	return chess.NewGame(fenFunc).Position()
 }
 
 func sortedKeys(m map[string]string) []string {

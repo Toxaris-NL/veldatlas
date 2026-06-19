@@ -1,7 +1,6 @@
 package opening
 
 import (
-    "encoding/binary"
     "fmt"
     "os"
     "sort"
@@ -10,7 +9,7 @@ import (
 
     chess "github.com/corentings/chess/v2"
 
-    "github.com/yourname/veldatlas/internal/domain"
+    "github.com/Toxaris-Nl/veldatlas/internal/domain"
 )
 
 // StaticProvider performs real Polyglot lookup against a .bin book file.
@@ -93,7 +92,7 @@ func (p *StaticProvider) loadBook() error {
         }
         defer f.Close()
 
-        book, err := chess.LoadBookFromReader(f)
+        book, err := chess.LoadFromReader(f)
         if err != nil {
             p.err = fmt.Errorf("load polyglot book %q: %w", p.path, err)
             return
@@ -108,23 +107,20 @@ func (p *StaticProvider) loadBook() error {
 // If your pinned corentings/chess version exposes a slightly different
 // exported hash method, adjust only this helper.
 func positionHashFromFEN(fen string) (uint64, error) {
-    g := chess.NewGame(chess.UseFEN(fen))
-    pos := g.Position()
+    fenFunc, err := chess.FEN(fen)
+    if err != nil {
+        return 0, fmt.Errorf("cannot build position from FEN: %w", err)
+    }
+    pos := chess.NewGame(fenFunc).Position()
     if pos == nil {
         return 0, fmt.Errorf("cannot build position from FEN")
     }
-
     hasher := chess.NewZobristHasher()
-
-    hashBytes, err := hasher.HashPosition(pos)
+    hashStr, err := hasher.HashPosition(pos.String())
     if err != nil {
         return 0, err
     }
-    if len(hashBytes) != 8 {
-        return 0, fmt.Errorf("unexpected zobrist hash length: %d", len(hashBytes))
-    }
-
-    return binary.BigEndian.Uint64(hashBytes), nil
+    return chess.ZobristHashToUint64(hashStr), nil
 }
 
 // polyglotMoveToUCI converts a 16-bit Polyglot move into a UCI move string.
