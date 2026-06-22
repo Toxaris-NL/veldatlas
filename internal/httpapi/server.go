@@ -139,6 +139,7 @@ func (api *API) handleNewVsEngine(w http.ResponseWriter, r *http.Request) {
         Engine     string `json:"engine"`
         HumanColor string `json:"humanColor"`
         Difficulty string `json:"difficulty"`
+        FEN        string `json:"fen"`
     }
 
     if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -146,7 +147,7 @@ func (api *API) handleNewVsEngine(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    ss, err := api.svc.StartEngineGame(body.Engine, body.HumanColor, body.Difficulty)
+    ss, err := api.svc.StartEngineGame(body.Engine, body.HumanColor, body.Difficulty, strings.TrimSpace(body.FEN))
     if err != nil {
         writeServiceError(w, err)
         return

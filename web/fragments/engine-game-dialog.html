@@ -1,16 +1,31 @@
-<div id="engineGameDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="engineGameDialogTitle">
+<div
+  id="engineGameDialog"
+  class="modal hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="engineGameDialogTitle"
+>
   <div class="modal-backdrop" data-close-dialog="engineGameDialog"></div>
 
   <div class="modal-card">
     <div class="modal-header">
       <h2 id="engineGameDialogTitle">New game against engine</h2>
-      <button class="icon-button" data-close-dialog="engineGameDialog" type="button" aria-label="Close dialog">✕</button>
+      <button
+        class="icon-button"
+        data-close-dialog="engineGameDialog"
+        type="button"
+        aria-label="Close dialog"
+      >
+        ✕
+      </button>
     </div>
 
-    <p class="muted">
-      Configure a new game against the engine. Time controls are shown here for completeness,
-      but they are not implemented yet in the backend.
-    </p>
+    <p class="muted">Configure a new game against the engine.</p>
+
+    <div id="engineGameFenNotice" class="not-implemented-note hidden">
+      This game starts from a custom FEN position. You will play the side to move
+      in that position, so that you make the first move from the given setup.
+    </div>
 
     <div class="form-grid two">
       <label>
@@ -59,9 +74,7 @@
       </label>
     </div>
 
-    <div class="not-implemented-note">
-      Clock settings are not implemented yet.
-    </div>
+    <div class="not-implemented-note">Clock settings are not implemented yet.</div>
 
     <div class="toolbar">
       <button id="engineGameStartBtn" type="button">Start game</button>

@@ -76,11 +76,12 @@ func (s *Service) NewGame(fen string) (*domain.Session, error) {
     return cloneSession(ss.Session), nil
 }
 
-func (s *Service) StartEngineGame(engineName, humanColor, difficulty string) (*domain.Session, error) {
-    ss, err := s.NewGame("")
+func (s *Service) StartEngineGame(engineName, humanColor, difficulty, fen string) (*domain.Session, error) {
+    ss, err := s.NewGame(fen)
     if err != nil {
         return nil, err
     }
+
     s.mu.Lock()
     state := s.sessions[ss.ID]
     state.Session.Mode = domain.SessionSettings{
@@ -91,12 +92,15 @@ func (s *Service) StartEngineGame(engineName, humanColor, difficulty string) (*d
     }
     s.mu.Unlock()
 
-    if humanColor == "black" {
+    // For normal start-position games, let the engine move first if the human chose black.
+    // For custom FEN starts, the user must always make the first move from that position.
+    if fen == "" && humanColor == "black" {
         _, err = s.EngineMove(ss.ID)
         if err != nil {
             return nil, err
         }
     }
+
     return s.Get(ss.ID)
 }
 

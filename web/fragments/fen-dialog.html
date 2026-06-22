@@ -1,11 +1,27 @@
 <div id="fenDialog" class="modal hidden">
   <div class="modal-backdrop" data-close-dialog="fenDialog"></div>
   <div class="modal-card">
-    <div class="modal-header"><h2>Enter FEN</h2><button class="icon-button" data-close-dialog="fenDialog">✕</button></div>
-    <p class="muted">Validation runs while typing. Load stays disabled until valid.</p>
-    <label>FEN<input id="fenInput" type="text" placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"></label>
+    <div class="modal-header"><h2>Enter FEN</h2><button class="icon-button" data-close-dialog="fenDialog" type="button">✕</button></div>
+
+    <p class="muted">
+      Validation runs while typing. You can load the position locally,
+      start analysis from it, or start a game against the engine from it.
+    </p>
+
+    <label>
+      <span>FEN</span>
+      <input id="fenInput" type="text" placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1">
+    </label>
+
     <div id="fenValidationHint" class="validation-hint muted">Enter a full 6-part FEN.</div>
     <div id="fenError" class="form-error hidden"></div>
-    <div class="toolbar"><button id="fenLoadBtn" type="button" disabled>Load FEN</button><button id="fenResetBtn" type="button">Start position</button><button data-close-dialog="fenDialog" type="button">Cancel</button></div>
+
+    <div class="toolbar">
+      <button id="fenLoadBtn" type="button" disabled>Load position</button>
+      <button id="fenStartAnalysisBtn" type="button" disabled>Start analysis</button>
+      <button id="fenStartEngineBtn" type="button" disabled>Start against engine</button>
+      <button id="fenResetBtn" type="button">Start position</button>
+      <button data-close-dialog="fenDialog" type="button">Cancel</button>
+    </div>
   </div>
 </div>
