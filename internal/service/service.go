@@ -255,6 +255,13 @@ func (s *Service) Redo(id string) (*domain.Session, error) {
 }
 
 func (s *Service) Legal(id, square string) ([]string, error) {
+    if len(square) != 2 ||
+    square[0] < 'a' || square[0] > 'h' ||
+    square[1] < '1' || square[1] > '8' {
+    writeError(w, http.StatusBadRequest, "invalid square")
+    return
+}
+
     ss, err := s.Get(id)
     if err != nil {
         return nil, err

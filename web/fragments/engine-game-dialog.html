@@ -1,0 +1,71 @@
+<div id="engineGameDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="engineGameDialogTitle">
+  <div class="modal-backdrop" data-close-dialog="engineGameDialog"></div>
+
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2 id="engineGameDialogTitle">New game against engine</h2>
+      <button class="icon-button" data-close-dialog="engineGameDialog" type="button" aria-label="Close dialog">✕</button>
+    </div>
+
+    <p class="muted">
+      Configure a new game against the engine. Time controls are shown here for completeness,
+      but they are not implemented yet in the backend.
+    </p>
+
+    <div class="form-grid two">
+      <label>
+        <span>Engine</span>
+        <select id="engineGameEngineSelect"></select>
+      </label>
+
+      <label>
+        <span>Strength / difficulty</span>
+        <select id="engineGameDifficultySelect">
+          <option value="easy">easy</option>
+          <option value="medium" selected>medium</option>
+          <option value="hard">hard</option>
+          <option value="maia-default">maia-default</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="form-grid two">
+      <label>
+        <span>You play</span>
+        <select id="engineGameHumanColorSelect">
+          <option value="white" selected>white</option>
+          <option value="black">black</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Clock</span>
+        <select id="engineGameUseClock" disabled>
+          <option value="no" selected>No clock</option>
+          <option value="yes">Use clock</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="form-grid two engine-game-disabled-section">
+      <label>
+        <span>Initial time (minutes)</span>
+        <input id="engineGameInitialMinutes" type="number" value="10" min="1" disabled>
+      </label>
+
+      <label>
+        <span>Increment (seconds)</span>
+        <input id="engineGameIncrementSeconds" type="number" value="5" min="0" disabled>
+      </label>
+    </div>
+
+    <div class="not-implemented-note">
+      Clock settings are not implemented yet.
+    </div>
+
+    <div class="toolbar">
+      <button id="engineGameStartBtn" type="button">Start game</button>
+      <button data-close-dialog="engineGameDialog" type="button">Cancel</button>
+    </div>
+  </div>
+</div>

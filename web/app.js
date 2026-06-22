@@ -23,6 +23,7 @@ const FRAGMENTS = {
   about: "/fragments/about-page.html",
   fenDialog: "/fragments/fen-dialog.html",
   pgnDialog: "/fragments/pgn-dialog.html",
+  engineGameDialog: "/fragments/engine-game-dialog.html",
 };
 
 const MOCK_SETTINGS = {
@@ -103,7 +104,7 @@ async function loadFragments() {
   document.getElementById("pageHost").innerHTML =
     parts[1] + parts[2] + parts[3];
   document.getElementById("dialogHost").innerHTML =
-    parts[4] + parts[5];
+    parts[4] + parts[5] + parts[6];
 }
 
 function bindElements() {
@@ -166,6 +167,23 @@ async function api(path, opt = {}) {
     return mockApi(path, opt);
   }
 }
+
+async function fetchLegalMoves(gameId, square) {
+  if (!gameId) {
+    return [];
+  }
+
+  if (!square || square.length !== 2) {
+    return [];
+  }
+
+  const payload = await api(
+    `/api/game/${encodeURIComponent(gameId)}/legal?square=${encodeURIComponent(square)}`
+  );
+
+  return Array.isArray(payload.moves) ? payload.moves : [];
+}
+
 
 function mockApi(path, opt = {}) {
   const method = (opt.method || "GET").toUpperCase();
@@ -320,14 +338,19 @@ async function onMoveInput(e) {
       return true;
     }
 
-    const res = await api(
-      `/api/game/${currentGame.id}/legal?square=${e.square}`
-    );
+try {
+      board.removeMarkers(MARKER_TYPE.dot);
 
-    board.removeMarkers(MARKER_TYPE.dot);
-    (res.moves || []).forEach((m) => {
-      board.addMarker(MARKER_TYPE.dot, m.slice(2, 4));
-    });
+      const legalMoves = await fetchLegalMoves(currentGame.id, e.square);
+
+      legalMoves.forEach((uci) => {
+        const targetSquare = uci.slice(2, 4);
+        board.addMarker(MARKER_TYPE.dot, targetSquare);
+      });
+    } catch (err) {
+      console.error("Failed to fetch legal moves:", err);
+      board.removeMarkers(MARKER_TYPE.dot);
+    }
 
     return true;
   }
@@ -355,6 +378,7 @@ async function onMoveInput(e) {
     }
 
     await playMove(`${e.squareFrom}${e.squareTo}${e.promotion || ""}`);
+    board.removeMarkers(MARKER_TYPE.dot);
     return true;
   }
 
@@ -362,15 +386,27 @@ async function onMoveInput(e) {
 }
 
 function renderEngineSelects() {
-  ["engineSelect", "cfgDefaultAnalysisEngine", "cfgDefaultPlayEngine"].forEach(
+    [
+    "engineGameEngineSelect",
+    "cfgDefaultAnalysisEngine",
+    "cfgDefaultPlayEngine"
+  ].forEach(
     (id) => {
       els[id].innerHTML = "";
+      if (els[id]) {
+        ls[id].innerHTML = "";
+      }
     }
   );
 
   Object.keys(currentSettings.engines || {}).forEach((name) => {
-    ["engineSelect", "cfgDefaultAnalysisEngine", "cfgDefaultPlayEngine"].forEach(
+    [
+      "engineGameEngineSelect",
+      "cfgDefaultAnalysisEngine",
+      "cfgDefaultPlayEngine"
+    ].forEach(
       (id) => {
+        if (!els[id]) return;
         const o = document.createElement("option");
         o.value = name;
         o.textContent = name;
@@ -379,8 +415,10 @@ function renderEngineSelects() {
     );
   });
 
-  els.engineSelect.value =
-    currentSettings.ui.defaultAnalysisEngine || "stockfish";
+  if (els.engineGameEngineSelect) {
+    els.engineGameEngineSelect.value =
+      currentSettings.ui.defaultPlayEngine || "stockfish";
+  }
   els.cfgDefaultAnalysisEngine.value =
     currentSettings.ui.defaultAnalysisEngine || "stockfish";
   els.cfgDefaultPlayEngine.value =
@@ -827,17 +865,18 @@ async function newGame(mode = "pvp") {
   showPage("pageMain");
 }
 
-async function newVsEngine() {
+async function newVsEngine(config = null) {
+  const payload = config || {
+    engine: els.engineGameEngineSelect.value,
+    difficulty: els.engineGameDifficultySelect.value,
+    humanColor: els.engineGameHumanColorSelect.value,
+  };
+
   currentGame = await api("/api/game/new-vs-engine", {
     method: "POST",
-    body: JSON.stringify({
-      engine: els.engineSelect.value,
-      difficulty: els.difficultySelect.value,
-      humanColor: els.humanColorSelect.value,
-    }),
+    body: JSON.stringify(payload),
   });
 
-  els.currentModeBadge.textContent = "Player vs Engine";
   currentReplay = null;
   replayIndex = 0;
   renderSession(currentGame);
@@ -973,7 +1012,21 @@ function bindEvents() {
 
   els.menuNewPvP.onclick = () => newGame("pvp");
   els.menuNewAnalysis.onclick = () => newGame("analysis");
-  els.menuNewVsEngine.onclick = () => newVsEngine();
+  
+  els.menuNewVsEngine.onclick = () => {
+    if (els.engineGameEngineSelect && els.cfgDefaultPlayEngine) {
+      els.engineGameEngineSelect.value =
+        els.cfgDefaultPlayEngine.value || "stockfish";
+    }
+    if (els.engineGameDifficultySelect) {
+      els.engineGameDifficultySelect.value = "medium";
+    }
+    if (els.engineGameHumanColorSelect) {
+      els.engineGameHumanColorSelect.value = "white";
+    }
+    openDialog("engineGameDialog");
+  };
+
   els.newGameBtn.onclick = () => newGame("pvp");
 
   els.undoBtn.onclick = async () => {
@@ -1005,6 +1058,17 @@ function bindEvents() {
   els.settingsReloadBtn.onclick = () => loadSettings();
   els.saveSettingsBtn.onclick = () => saveSettings();
   els.cfgTheme.onchange = () => setTheme(els.cfgTheme.value, true);
+
+if (els.engineGameStartBtn) {
+    els.engineGameStartBtn.onclick = async () => {
+      await newVsEngine({
+        engine: els.engineGameEngineSelect.value,
+        difficulty: els.engineGameDifficultySelect.value,
+        humanColor: els.engineGameHumanColorSelect.value,
+      });
+      closeDialog("engineGameDialog");
+    };
+  }
 
   els.resetPanelOrderBtn.onclick = () => {
     currentPanelOrder = resetPanelOrder();
