@@ -1,8 +1,20 @@
 import { Chessboard, FEN, INPUT_EVENT_TYPE, COLOR } from "https://cdn.jsdelivr.net/npm/cm-chessboard@8/src/Chessboard.js";
 import { Markers, MARKER_TYPE } from "https://cdn.jsdelivr.net/npm/cm-chessboard@8/src/extensions/markers/Markers.js";
 import { PromotionDialog } from "https://cdn.jsdelivr.net/npm/cm-chessboard@8/src/extensions/promotion-dialog/PromotionDialog.js";
+import {
+  loadPanelOrder,
+  savePanelOrder,
+  resetPanelOrder,
+  applyPanelOrder,
+  renderPanelOrderList,
+} from "/panel-order.js";
 
 const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+const STORAGE_KEYS = {
+  theme: "veldatlas.theme",
+  view: "veldatlas.view",
+};
 
 const FRAGMENTS = {
   sidebar: "/fragments/sidebar.html",
@@ -11,11 +23,6 @@ const FRAGMENTS = {
   about: "/fragments/about-page.html",
   fenDialog: "/fragments/fen-dialog.html",
   pgnDialog: "/fragments/pgn-dialog.html",
-};
-
-const STORAGE_KEYS = {
-  theme: "veldatlas.theme",
-  view: "veldatlas.view",
 };
 
 const MOCK_SETTINGS = {
@@ -76,27 +83,27 @@ const MOCK_SESSION = {
   },
 };
 
+let els = {};
+let board = null;
 let currentSettings = structuredClone(MOCK_SETTINGS);
 let currentGame = structuredClone(MOCK_SESSION);
 let currentReplay = null;
 let replayIndex = 0;
-let backendAvailable = true;
 let localMoves = [];
 let selectedPGNFile = null;
-let board = null;
-
-const els = {};
+let backendAvailable = true;
+let currentPanelOrder = [];
 
 async function loadFragments() {
-  const [sidebar, boardPage, settingsPage, aboutPage, fenDialog, pgnDialog] =
-    await Promise.all(
-      Object.values(FRAGMENTS).map((path) => fetch(path).then((r) => r.text()))
-    );
+  const parts = await Promise.all(
+    Object.values(FRAGMENTS).map((u) => fetch(u).then((r) => r.text()))
+  );
 
-  document.getElementById("sidebarHost").innerHTML = sidebar;
+  document.getElementById("sidebarHost").innerHTML = parts[0];
   document.getElementById("pageHost").innerHTML =
-    boardPage + settingsPage + aboutPage;
-  document.getElementById("dialogHost").innerHTML = fenDialog + pgnDialog;
+    parts[1] + parts[2] + parts[3];
+  document.getElementById("dialogHost").innerHTML =
+    parts[4] + parts[5];
 }
 
 function bindElements() {
@@ -117,7 +124,7 @@ function saveStoredTheme(theme) {
   try {
     localStorage.setItem(STORAGE_KEYS.theme, theme);
   } catch {
-    // ignore storage failures
+    // ignore
   }
 }
 
@@ -134,68 +141,60 @@ function saveStoredViewState(state) {
   try {
     localStorage.setItem(STORAGE_KEYS.view, JSON.stringify(state));
   } catch {
-    // ignore storage failures
+    // ignore
   }
 }
 
-async function api(path, options = {}) {
+async function api(path, opt = {}) {
   try {
-    const response = await fetch(path, {
+    const r = await fetch(path, {
       headers: { "Content-Type": "application/json" },
-      ...options,
+      ...opt,
     });
 
-    if (!response.ok) {
-      const payload = await response.json().catch(() => ({
-        error: response.statusText,
-      }));
-      throw new Error(payload.error || response.statusText);
+    if (!r.ok) {
+      const p = await r.json().catch(() => ({ error: r.statusText }));
+      throw new Error(p.error || r.statusText);
     }
 
     backendAvailable = true;
-    const ctype = response.headers.get("content-type") || "";
-    return ctype.includes("application/json")
-      ? response.json()
-      : response.text();
+    return (r.headers.get("content-type") || "").includes("application/json")
+      ? r.json()
+      : r.text();
   } catch {
     backendAvailable = false;
-    return mockApi(path, options);
+    return mockApi(path, opt);
   }
 }
 
-function mockApi(path, options = {}) {
-  const method = (options.method || "GET").toUpperCase();
+function mockApi(path, opt = {}) {
+  const method = (opt.method || "GET").toUpperCase();
 
   if (path === "/api/settings" && method === "GET") {
     return Promise.resolve(structuredClone(currentSettings));
   }
 
   if (path === "/api/settings" && method === "POST") {
-    currentSettings = JSON.parse(options.body || "{}");
+    currentSettings = JSON.parse(opt.body || "{}");
     return Promise.resolve(structuredClone(currentSettings));
   }
 
   if (path === "/api/game/new" && method === "POST") {
-  const body = JSON.parse(options.body || "{}");
-  localMoves = [];
-  currentGame = structuredClone(MOCK_SESSION);
-  if (body.fen) {
-    currentGame.snapshot.fen = body.fen;
-    currentGame.snapshot.turn = body.fen.includes(" b ") ? "b" : "w";
+    localMoves = [];
+    currentGame = structuredClone(MOCK_SESSION);
+    return Promise.resolve(structuredClone(currentGame));
   }
-  return Promise.resolve(structuredClone(currentGame));
-}
 
   if (path === "/api/game/new-vs-engine" && method === "POST") {
-    const body = JSON.parse(options.body || "{}");
+    const b = JSON.parse(opt.body || "{}");
     localMoves = [];
     currentGame = structuredClone(MOCK_SESSION);
 
     currentGame.mode = {
       playingAgainstEngine: true,
-      engineName: body.engine || currentSettings.ui.defaultPlayEngine,
-      humanColor: body.humanColor || "white",
-      difficulty: body.difficulty || "medium",
+      engineName: b.engine || currentSettings.ui.defaultPlayEngine,
+      humanColor: b.humanColor || "white",
+      difficulty: b.difficulty || "medium",
     };
 
     if (currentGame.mode.humanColor === "black") {
@@ -208,9 +207,9 @@ function mockApi(path, options = {}) {
   }
 
   if (path.includes("/move") && method === "POST") {
-    const body = JSON.parse(options.body || "{}");
-    if (body.move) {
-      localMoves.push(body.move);
+    const b = JSON.parse(opt.body || "{}");
+    if (b.move) {
+      localMoves.push(b.move);
     }
     return Promise.resolve(mockSession());
   }
@@ -230,10 +229,10 @@ function mockApi(path, options = {}) {
   }
 
   if (path.includes("/legal")) {
-    const square =
+    const sq =
       new URLSearchParams(path.split("?")[1] || "").get("square") || "e2";
     return Promise.resolve({
-      moves: [`${square.slice(0, 2)}e4`, `${square.slice(0, 2)}e3`],
+      moves: [`${sq.slice(0, 2)}e4`, `${sq.slice(0, 2)}e3`],
     });
   }
 
@@ -247,8 +246,7 @@ function mockApi(path, options = {}) {
         {
           engine:
             els.engineSelect?.value ||
-            currentSettings.ui.defaultAnalysisEngine ||
-            "stockfish",
+            currentSettings.ui.defaultAnalysisEngine,
           bestMove: "e2e4",
           cached: false,
           raw: "mock backend unavailable",
@@ -273,13 +271,13 @@ function mockApi(path, options = {}) {
   }
 
   if (path === "/api/replay/load" && method === "POST") {
-    const parsed = parsePGN(options.body || "");
+    const p = parsePGN(opt.body || "");
     return Promise.resolve({
-      headers: parsed.headers,
+      headers: p.headers,
       frames: [
         {
           fen: currentGame.snapshot.fen,
-          moveLabels: parsed.moves,
+          moveLabels: p.moves,
         },
       ],
     });
@@ -310,62 +308,57 @@ function initBoard() {
         file: "pieces/staunty.svg",
       },
     },
-    extensions: [
-      { class: Markers },
-      { class: PromotionDialog },
-    ],
+    extensions: [{ class: Markers }, { class: PromotionDialog }],
   });
 
-  board.enableMoveInput(handleMoveInput);
+  board.enableMoveInput(onMoveInput);
 }
 
-async function handleMoveInput(event) {
-  switch (event.type) {
-    case INPUT_EVENT_TYPE.moveInputStarted: {
-      if (!currentGame?.id) return true;
-
-      const result = await api(
-        `/api/game/${currentGame.id}/legal?square=${event.square}`
-      );
-
-      board.removeMarkers(MARKER_TYPE.dot);
-      (result.moves || []).forEach((move) => {
-        board.addMarker(MARKER_TYPE.dot, move.slice(2, 4));
-      });
-
+async function onMoveInput(e) {
+  if (e.type === INPUT_EVENT_TYPE.moveInputStarted) {
+    if (!currentGame?.id) {
       return true;
     }
 
-    case INPUT_EVENT_TYPE.validateMoveInput: {
-      const isPawn = event.piece && event.piece.endsWith("p");
-      const reachesLastRank =
-        event.squareTo.endsWith("8") || event.squareTo.endsWith("1");
+    const res = await api(
+      `/api/game/${currentGame.id}/legal?square=${e.square}`
+    );
 
-      if (!event.promotion && isPawn && reachesLastRank) {
-        board.showPromotionDialog(
-          event.squareTo,
-          event.piece.startsWith("w") ? COLOR.white : COLOR.black,
-          async (result) => {
-            if (result?.piece) {
-              const promo = result.piece.slice(-1).toLowerCase();
-              await playMove(
-                `${event.squareFrom}${event.squareTo}${promo}`
-              );
-            }
-          }
-        );
-        return false;
-      }
+    board.removeMarkers(MARKER_TYPE.dot);
+    (res.moves || []).forEach((m) => {
+      board.addMarker(MARKER_TYPE.dot, m.slice(2, 4));
+    });
 
-      await playMove(
-        `${event.squareFrom}${event.squareTo}${event.promotion || ""}`
-      );
-      return true;
-    }
-
-    default:
-      return true;
+    return true;
   }
+
+  if (e.type === INPUT_EVENT_TYPE.validateMoveInput) {
+    const isPawn = e.piece && e.piece.endsWith("p");
+    const lastRank =
+      e.squareTo.endsWith("8") || e.squareTo.endsWith("1");
+
+    if (!e.promotion && isPawn && lastRank) {
+      board.showPromotionDialog(
+        e.squareTo,
+        e.piece.startsWith("w") ? COLOR.white : COLOR.black,
+        async (result) => {
+          if (result?.piece) {
+            await playMove(
+              `${e.squareFrom}${e.squareTo}${result.piece
+                .slice(-1)
+                .toLowerCase()}`
+            );
+          }
+        }
+      );
+      return false;
+    }
+
+    await playMove(`${e.squareFrom}${e.squareTo}${e.promotion || ""}`);
+    return true;
+  }
+
+  return true;
 }
 
 function renderEngineSelects() {
@@ -378,10 +371,10 @@ function renderEngineSelects() {
   Object.keys(currentSettings.engines || {}).forEach((name) => {
     ["engineSelect", "cfgDefaultAnalysisEngine", "cfgDefaultPlayEngine"].forEach(
       (id) => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        els[id].appendChild(opt);
+        const o = document.createElement("option");
+        o.value = name;
+        o.textContent = name;
+        els[id].appendChild(o);
       }
     );
   });
@@ -394,22 +387,22 @@ function renderEngineSelects() {
     currentSettings.ui.defaultPlayEngine || "stockfish";
 }
 
-function optionsToText(options) {
-  return Object.entries(options || {})
+function optionsToText(o) {
+  return Object.entries(o || {})
     .map(([k, v]) => `${k}=${v}`)
     .join("\n");
 }
 
-function textToOptions(text) {
+function textToOptions(t) {
   const out = {};
-  String(text || "")
+  String(t || "")
     .split(/\r?\n/)
     .map((s) => s.trim())
     .filter(Boolean)
     .forEach((line) => {
-      const idx = line.indexOf("=");
-      if (idx > 0) {
-        out[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+      const i = line.indexOf("=");
+      if (i > 0) {
+        out[line.slice(0, i).trim()] = line.slice(i + 1).trim();
       }
     });
   return out;
@@ -497,32 +490,28 @@ async function saveSettings() {
   populateSettings();
 }
 
-function setTheme(theme, persist = true) {
-  const resolved = theme === "dark" ? "dark" : "light";
-  document.body.setAttribute("data-theme", resolved);
-
+function setTheme(t, persist = true) {
+  const theme = t === "dark" ? "dark" : "light";
+  document.body.setAttribute("data-theme", theme);
   if (els.cfgTheme) {
-    els.cfgTheme.value = resolved;
+    els.cfgTheme.value = theme;
   }
-
   if (persist) {
-    saveStoredTheme(resolved);
+    saveStoredTheme(theme);
   }
 }
 
 function toggleTheme() {
-  const next =
-    document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
-  setTheme(next, true);
+  setTheme(
+    document.body.getAttribute("data-theme") === "dark"
+      ? "light"
+      : "dark"
+  );
 }
 
 function showPage(id) {
-  document.querySelectorAll(".page").forEach((page) => {
-    page.classList.remove("active");
-  });
-  if (els[id]) {
-    els[id].classList.add("active");
-  }
+  document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
+  els[id].classList.add("active");
 }
 
 function toggleSidebar() {
@@ -532,13 +521,10 @@ function toggleSidebar() {
 function initMenus() {
   document.querySelectorAll(".menu-parent").forEach((btn) => {
     btn.onclick = () => {
-      const target = document.getElementById(btn.dataset.target);
-      const open = target.classList.toggle("open");
+      const t = document.getElementById(btn.dataset.target);
+      const open = t.classList.toggle("open");
       btn.classList.toggle("active", open);
-      const caret = btn.querySelector(".caret");
-      if (caret) {
-        caret.textContent = open ? "▾" : "▸";
-      }
+      btn.querySelector(".caret").textContent = open ? "▾" : "▸";
     };
   });
 }
@@ -547,23 +533,25 @@ function initViewToggles() {
   const stored = loadStoredViewState();
 
   document.querySelectorAll("[data-view-target]").forEach((chk) => {
-    const targetId = chk.getAttribute("data-view-target");
-    const target = document.getElementById(targetId);
-    if (!target) return;
+    const id = chk.getAttribute("data-view-target");
+    const panel = document.getElementById(id);
+    if (!panel) return;
 
-    if (Object.prototype.hasOwnProperty.call(stored, targetId)) {
-      chk.checked = !!stored[targetId];
+    if (Object.prototype.hasOwnProperty.call(stored, id)) {
+      chk.checked = !!stored[id];
     }
 
-    target.classList.toggle("hidden-panel", !chk.checked);
+    panel.classList.toggle("hidden-panel", !chk.checked);
 
     chk.onchange = (e) => {
       const checked = !!e.target.checked;
-      target.classList.toggle("hidden-panel", !checked);
+      panel.classList.toggle("hidden-panel", !checked);
 
-      const nextState = loadStoredViewState();
-      nextState[targetId] = checked;
-      saveStoredViewState(nextState);
+      const next = loadStoredViewState();
+      next[id] = checked;
+      saveStoredViewState(next);
+
+      renderArrangePanels();
     };
   });
 }
@@ -585,26 +573,26 @@ function initDialogClose() {
 function parsePGN(raw) {
   const headers = {};
   const lines = String(raw || "").split(/\r?\n/);
-  const headerRe = /^\[(\w+)\s+"(.*)"\]$/;
+  const re = /^\[(\w+)\s+"(.*)"\]$/;
   let inMoves = false;
   const moveLines = [];
 
   for (const line of lines) {
-    const trimmed = line.trim();
-    const match = trimmed.match(headerRe);
+    const t = line.trim();
+    const m = t.match(re);
 
-    if (match && !inMoves) {
-      headers[match[1]] = match[2];
+    if (m && !inMoves) {
+      headers[m[1]] = m[2];
       continue;
     }
 
-    if (trimmed === "" && Object.keys(headers).length > 0) {
+    if (t === "" && Object.keys(headers).length > 0) {
       inMoves = true;
       continue;
     }
 
     if (inMoves) {
-      moveLines.push(trimmed);
+      moveLines.push(t);
     }
   }
 
@@ -624,32 +612,28 @@ function parsePGN(raw) {
 }
 
 function renderPGNDetails(parsed) {
-  const headers = parsed.headers || {};
+  const h = parsed.headers || {};
 
   [
-    ["pgnEvent", headers.Event || ""],
-    ["pgnSite", headers.Site || ""],
-    ["pgnDate", headers.Date || ""],
-    ["pgnRound", headers.Round || ""],
-    ["pgnWhite", headers.White || ""],
-    ["pgnBlack", headers.Black || ""],
-    ["pgnResult", headers.Result || ""],
-    ["pgnEco", headers.ECO || ""],
-  ].forEach(([id, value]) => {
-    els[id].value = value;
+    ["pgnEvent", h.Event || ""],
+    ["pgnSite", h.Site || ""],
+    ["pgnDate", h.Date || ""],
+    ["pgnRound", h.Round || ""],
+    ["pgnWhite", h.White || ""],
+    ["pgnBlack", h.Black || ""],
+    ["pgnResult", h.Result || ""],
+    ["pgnEco", h.ECO || ""],
+  ].forEach(([id, val]) => {
+    els[id].value = val;
   });
 
   els.pgnMovesList.innerHTML = "";
 
-  (parsed.moves || []).forEach((move, index, arr) => {
-    if (index % 2 === 0) {
+  (parsed.moves || []).forEach((m, i, arr) => {
+    if (i % 2 === 0) {
       const row = document.createElement("div");
       row.className = "pgn-move-row";
-      row.innerHTML = `
-        <div>${Math.floor(index / 2) + 1}.</div>
-        <div>${move || ""}</div>
-        <div>${arr[index + 1] || ""}</div>
-      `;
+      row.innerHTML = `<div>${Math.floor(i / 2) + 1}.</div><div>${m || ""}</div><div>${arr[i + 1] || ""}</div>`;
       els.pgnMovesList.appendChild(row);
     }
   });
@@ -659,13 +643,13 @@ function clearPGNDetails() {
   renderPGNDetails({ headers: {}, moves: [] });
 }
 
-async function loadReplay(rawPGN) {
-  const parsed = parsePGN(rawPGN);
+async function loadReplay(raw) {
+  const parsed = parsePGN(raw);
   renderPGNDetails(parsed);
 
   currentReplay = await api("/api/replay/load", {
     method: "POST",
-    body: rawPGN,
+    body: raw,
   });
 
   replayIndex = 0;
@@ -718,8 +702,8 @@ function validateFEN(fen) {
     return result;
   }
 
-  let whiteKings = 0;
-  let blackKings = 0;
+  let WK = 0;
+  let BK = 0;
 
   for (const rank of ranks) {
     let count = 0;
@@ -729,8 +713,8 @@ function validateFEN(fen) {
         count += Number(ch);
       } else if (/[pnbrqkPNBRQK]/.test(ch)) {
         count += 1;
-        if (ch === "K") whiteKings += 1;
-        if (ch === "k") blackKings += 1;
+        if (ch === "K") WK += 1;
+        if (ch === "k") BK += 1;
       } else {
         result.error = `Invalid board character: ${ch}`;
         return result;
@@ -743,7 +727,7 @@ function validateFEN(fen) {
     }
   }
 
-  if (whiteKings !== 1 || blackKings !== 1) {
+  if (WK !== 1 || BK !== 1) {
     result.error =
       "FEN must contain exactly one white king and one black king.";
     return result;
@@ -755,26 +739,22 @@ function validateFEN(fen) {
   }
 
   if (!(castling === "-" || /^[KQkq]+$/.test(castling))) {
-    result.error =
-      "Castling field must be - or a combination of KQkq.";
+    result.error = "Castling field must be - or a combination of KQkq.";
     return result;
   }
 
   if (!(ep === "-" || /^[a-h][36]$/.test(ep))) {
-    result.error =
-      "En-passant field must be - or a square like e3 or d6.";
+    result.error = "En-passant field must be - or a square like e3 or d6.";
     return result;
   }
 
   if (!/^\d+$/.test(halfmove)) {
-    result.error =
-      "Halfmove clock must be a non-negative integer.";
+    result.error = "Halfmove clock must be a non-negative integer.";
     return result;
   }
 
   if (!/^\d+$/.test(fullmove) || Number(fullmove) < 1) {
-    result.error =
-      "Fullmove number must be an integer >= 1.";
+    result.error = "Fullmove number must be an integer >= 1.";
     return result;
   }
 
@@ -804,30 +784,20 @@ function updateFENValidationUI() {
   }
 }
 
-async function loadFENIntoBoard(fen) {
-  currentGame = await api("/api/game/new", {
-    method: "POST",
-    body: JSON.stringify({ fen }),
-  });
-
-  // Fall back to local state if backend doesn't echo the FEN
-  if (!currentGame.snapshot?.fen || currentGame.snapshot.fen === FEN.start) {
-    currentGame.snapshot = {
-      ...currentGame.snapshot,
-      fen,
-      turn: fen.includes(" b ") ? "b" : "w",
-      status: "in_progress",
-    };
-  }
+function loadFENIntoBoard(fen) {
+  currentGame.snapshot = {
+    ...currentGame.snapshot,
+    fen,
+    turn: fen.includes(" b ") ? "b" : "w",
+    status: "in_progress",
+  };
 
   currentGame.moves = [];
   board.setPosition(fen, true);
   renderSession(currentGame);
 
   els.recommendations.textContent =
-    "FEN loaded. Recommendations will use backend if available.";
-
-  await loadRecommendations();
+    "Local FEN loaded. Recommendation refresh will use backend if available.";
 }
 
 async function playMove(move) {
@@ -851,7 +821,6 @@ async function newGame(mode = "pvp") {
 
   currentReplay = null;
   replayIndex = 0;
-
   renderSession(currentGame);
   clearPGNDetails();
   await loadRecommendations();
@@ -871,7 +840,6 @@ async function newVsEngine() {
   els.currentModeBadge.textContent = "Player vs Engine";
   currentReplay = null;
   replayIndex = 0;
-
   renderSession(currentGame);
   clearPGNDetails();
   await loadRecommendations();
@@ -917,13 +885,14 @@ async function loadRecommendations() {
         line += " [cached]";
       }
       lines.push(line);
+
       if (item.raw) {
         lines.push(`    raw: ${item.raw}`);
       }
     });
   }
 
-  els.recommendations.textContent = lines.join("\n");
+  els.recommendations.textContent = lines.join("\\n");
   els.analysis.textContent = panel.engine?.length
     ? JSON.stringify(panel.engine, null, 2)
     : "No engine analysis.";
@@ -934,9 +903,9 @@ function renderSession(session) {
   board.setPosition(session.snapshot?.fen || FEN.start, true);
 
   els.moves.innerHTML = "";
-  (session.moves || []).forEach((move) => {
+  (session.moves || []).forEach((m) => {
     const li = document.createElement("li");
-    li.textContent = move;
+    li.textContent = m;
     els.moves.appendChild(li);
   });
 
@@ -954,10 +923,50 @@ function renderSession(session) {
   );
 }
 
+function renderArrangePanels() {
+  const hiddenState = {
+    gameInfoPanel: document
+      .getElementById("gameInfoPanel")
+      .classList.contains("hidden-panel"),
+    moveListPanel: document
+      .getElementById("moveListPanel")
+      .classList.contains("hidden-panel"),
+    recommendationsPanel: document
+      .getElementById("recommendationsPanel")
+      .classList.contains("hidden-panel"),
+    analysisPanel: document
+      .getElementById("analysisPanel")
+      .classList.contains("hidden-panel"),
+    replayPanel: document
+      .getElementById("replayPanel")
+      .classList.contains("hidden-panel"),
+    pgnDetailsPanel: document
+      .getElementById("pgnDetailsPanel")
+      .classList.contains("hidden-panel"),
+  };
+
+  renderPanelOrderList({
+    listElement: els.panelOrderList,
+    order: currentPanelOrder,
+    hiddenState,
+    onOrderChanged: (nextOrder) => {
+      currentPanelOrder = nextOrder;
+      savePanelOrder(nextOrder);
+      applyPanelOrder(els.reorderablePanelsContainer, nextOrder);
+      renderArrangePanels();
+    },
+  });
+}
+
 function bindEvents() {
   els.sidebarToggle.onclick = toggleSidebar;
   els.menuToggleTheme.onclick = toggleTheme;
-  els.menuSettings.onclick = () => showPage("pageSettings");
+
+  els.menuSettings.onclick = () => {
+    renderArrangePanels();
+    showPage("pageSettings");
+  };
+
   els.menuAbout.onclick = () => showPage("pageAbout");
   els.aboutBackBtn.onclick = () => showPage("pageMain");
   els.backToBoardBtn.onclick = () => showPage("pageMain");
@@ -965,7 +974,6 @@ function bindEvents() {
   els.menuNewPvP.onclick = () => newGame("pvp");
   els.menuNewAnalysis.onclick = () => newGame("analysis");
   els.menuNewVsEngine.onclick = () => newVsEngine();
-
   els.newGameBtn.onclick = () => newGame("pvp");
 
   els.undoBtn.onclick = async () => {
@@ -996,23 +1004,26 @@ function bindEvents() {
 
   els.settingsReloadBtn.onclick = () => loadSettings();
   els.saveSettingsBtn.onclick = () => saveSettings();
+  els.cfgTheme.onchange = () => setTheme(els.cfgTheme.value, true);
 
-  els.cfgTheme.onchange = () => {
-    setTheme(els.cfgTheme.value, true);
+  els.resetPanelOrderBtn.onclick = () => {
+    currentPanelOrder = resetPanelOrder();
+    applyPanelOrder(els.reorderablePanelsContainer, currentPanelOrder);
+    renderArrangePanels();
   };
 
   els.replayPrevBtn.onclick = () => {
     if (replayIndex > 0) {
       replayIndex -= 1;
-      renderReplayFrame();
     }
+    renderReplayFrame();
   };
 
   els.replayNextBtn.onclick = () => {
     if (currentReplay?.frames && replayIndex < currentReplay.frames.length - 1) {
       replayIndex += 1;
-      renderReplayFrame();
     }
+    renderReplayFrame();
   };
 
   els.menuOpenSample.onclick = async () => {
@@ -1031,21 +1042,20 @@ function bindEvents() {
 
   els.fenInput.addEventListener("input", updateFENValidationUI);
 
-  els.fenLoadBtn.onclick = async () => {
-  const fen = els.fenInput.value.trim();
-  const check = validateFEN(fen);
-  updateFENValidationUI();
+  els.fenLoadBtn.onclick = () => {
+    const check = validateFEN(els.fenInput.value.trim());
+    updateFENValidationUI();
 
-  if (!check.ok) {
-    els.fenError.textContent = check.error;
-    els.fenError.classList.remove("hidden");
-    return;
-  }
+    if (!check.ok) {
+      els.fenError.textContent = check.error;
+      els.fenError.classList.remove("hidden");
+      return;
+    }
 
-  els.fenError.classList.add("hidden");
-  await loadFENIntoBoard(fen);   // was: loadFENIntoBoard(fen)
-  closeDialog("fenDialog");
-};
+    els.fenError.classList.add("hidden");
+    loadFENIntoBoard(els.fenInput.value.trim());
+    closeDialog("fenDialog");
+  };
 
   els.fenResetBtn.onclick = () => {
     els.fenInput.value = START_FEN;
@@ -1069,9 +1079,9 @@ function bindEvents() {
       return;
     }
 
-    const text = await selectedPGNFile.text();
-    els.pgnTextInput.value = text;
-    await loadReplay(text);
+    const txt = await selectedPGNFile.text();
+    els.pgnTextInput.value = txt;
+    await loadReplay(txt);
     closeDialog("pgnDialog");
   };
 
@@ -1097,12 +1107,11 @@ async function main() {
   initViewToggles();
   bindEvents();
 
+  currentPanelOrder = loadPanelOrder();
+  applyPanelOrder(els.reorderablePanelsContainer, currentPanelOrder);
+
   await loadSettings();
-
-  if (!storedTheme && currentSettings?.theme) {
-    setTheme(currentSettings.theme, false);
-  }
-
+  renderArrangePanels();
   await newGame("pvp");
 }
 
