@@ -1,74 +1,78 @@
 <header class="topbar">
-  <div class="action-strip">
-    <button id="newGameBtn" type="button">New game</button>
-    <button id="undoBtn" type="button">Undo</button>
-    <button id="redoBtn" type="button">Redo</button>
-    <button id="recommendBtn" type="button">Recommendations</button>
-    <button id="engineMoveBtn" type="button">Engine move</button>
-  </div>
+    <div class="action-strip">
+        <button id="newGameBtn" type="button">New game</button>
+        <button id="undoBtn" type="button">Undo</button>
+        <button id="redoBtn" type="button">Redo</button>
+        <button id="recommendBtn" type="button">Recommendations</button>
+        <button id="engineMoveBtn" type="button">Engine move</button>
+    </div>
 </header>
 
 <section id="pageMain" class="page active">
-  <div class="workspace">
-    <section class="board-column">
-      <div id="board"></div>
+    <div class="workspace">
+        <section class="board-column">
+            <div id="board"></div>
 
-      <div id="clockPanel" class="card">
-        <h2>Clock</h2>
-        <div class="clock-grid">
-          <div><strong>White</strong><div id="clockWhite">--:--</div></div>
-          <div><strong>Black</strong><div id="clockBlack">--:--</div></div>
-        </div>
-      </div>
-    </section>
+            <div id="clockPanel" class="card">
+                <h2>Clock</h2>
+                <div class="clock-grid">
+                    <div><strong>White</strong>
+                        <div id="clockWhite">--:--</div>
+                    </div>
+                    <div><strong>Black</strong>
+                        <div id="clockBlack">--:--</div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <section class="info-column" id="reorderablePanelsContainer">
-      <div id="gameInfoPanel" class="card reorderable-panel">
-        <h2>Game information</h2>
-        <pre id="gameInfo"></pre>
-      </div>
+        <section class="info-column" id="reorderablePanelsContainer">
+            <div id="gameInfoPanel" class="card reorderable-panel">
+                <h2>Game information</h2>
+                <pre id="gameInfo"></pre>
+            </div>
 
-      <div id="moveListPanel" class="card reorderable-panel">
-        <h2>Move list</h2>
-        <ol id="moves"></ol>
-      </div>
+            <div id="moveListPanel" class="card reorderable-panel">
+                <h2>Move list</h2>
+                <ol id="moves"></ol>
+            </div>
 
-      <div id="recommendationsPanel" class="card reorderable-panel">
-        <h2>Recommendations</h2>
-        <pre id="recommendations"></pre>
-      </div>
+            <div id="recommendationsPanel" class="card reorderable-panel">
+                <h2>Recommendations</h2>
+                <pre id="recommendations"></pre>
+            </div>
 
-      <div id="analysisPanel" class="card reorderable-panel">
-        <h2>Analysis</h2>
-        <pre id="analysis"></pre>
-      </div>
+            <div id="analysisPanel" class="card reorderable-panel">
+                <h2>Analysis</h2>
+                <pre id="analysis"></pre>
+            </div>
 
-      <div id="replayPanel" class="card reorderable-panel">
-        <h2>Replay</h2>
-        <div class="toolbar">
-          <button id="replayPrevBtn" type="button">Prev</button>
-          <button id="replayNextBtn" type="button">Next</button>
-        </div>
-        <pre id="replayInfo"></pre>
-      </div>
+            <div id="replayPanel" class="card reorderable-panel">
+                <h2>Replay</h2>
+                <div class="toolbar">
+                    <button id="replayPrevBtn" type="button">Prev</button>
+                    <button id="replayNextBtn" type="button">Next</button>
+                </div>
+                <pre id="replayInfo"></pre>
+            </div>
 
-      <div id="pgnDetailsPanel" class="card reorderable-panel">
-        <h2>PGN details</h2>
-        <div class="pgn-grid">
-          <label><span>Event</span><input id="pgnEvent" readonly></label>
-          <label><span>Site</span><input id="pgnSite" readonly></label>
-          <label><span>Date</span><input id="pgnDate" readonly></label>
-          <label><span>Round</span><input id="pgnRound" readonly></label>
-          <label><span>White</span><input id="pgnWhite" readonly></label>
-          <label><span>Black</span><input id="pgnBlack" readonly></label>
-          <label><span>Result</span><input id="pgnResult" readonly></label>
-          <label><span>ECO</span><input id="pgnEco" readonly></label>
-        </div>
-        <div class="pgn-moves-wrap">
-          <h3>Moves</h3>
-          <div id="pgnMovesList" class="pgn-moves-list"></div>
-        </div>
-      </div>
-    </section>
-  </div>
+            <div id="pgnDetailsPanel" class="card reorderable-panel">
+                <h2>PGN details</h2>
+                <div class="pgn-grid">
+                    <label><span>Event</span><input id="pgnEvent" readonly></label>
+                    <label><span>Site</span><input id="pgnSite" readonly></label>
+                    <label><span>Date</span><input id="pgnDate" readonly></label>
+                    <label><span>Round</span><input id="pgnRound" readonly></label>
+                    <label><span>White</span><input id="pgnWhite" readonly></label>
+                    <label><span>Black</span><input id="pgnBlack" readonly></label>
+                    <label><span>Result</span><input id="pgnResult" readonly></label>
+                    <label><span>ECO</span><input id="pgnEco" readonly></label>
+                </div>
+                <div class="pgn-moves-wrap">
+                    <h3>Moves</h3>
+                    <div id="pgnMovesList" class="pgn-moves-list"></div>
+                </div>
+            </div>
+        </section>
+    </div>
 </section>
