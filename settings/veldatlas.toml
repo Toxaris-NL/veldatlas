@@ -13,7 +13,7 @@ addr = ":8080"
       Threads = "1"
   [engines.stockfish]
     enabled = true
-    path = ""
+    path = "D:\\Program Files\\Stockfish\\stockfish-windows-x86-64-avx2.exe"
     difficulty = "medium"
     for_play = true
     [engines.stockfish.options]
