@@ -1,14 +1,15 @@
 package service
 
 import (
-    "crypto/rand"
-    "encoding/hex"
-    "errors"
-    "fmt"
-    "sync"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"strings"
+	"sync"
 
-    "github.com/Toxaris-Nl/veldatlas/internal/config"
-    "github.com/Toxaris-Nl/veldatlas/internal/domain"
+	"github.com/Toxaris-Nl/veldatlas/internal/config"
+	"github.com/Toxaris-Nl/veldatlas/internal/domain"
 )
 
 var ErrSessionNotFound = errors.New("session not found")
@@ -49,15 +50,15 @@ func New(rules domain.RulesEngine, analysis domain.AnalysisEngine, book domain.O
 func (s *Service) Settings() config.Settings { return s.settings.Get() }
 func (s *Service) SaveSettings(cfg config.Settings) error { return s.settings.Save(cfg) }
 
-func (s *Service) NewGame(fen string) (*domain.Session, error) {
-    var snap domain.Snapshot
-    var err error
+const standardFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
-    if fen != "" {
-        snap, err = s.rules.NewGameFromFEN(fen)
-    } else {
-        snap, err = s.rules.NewGame()
+func (s *Service) NewGame(fen string) (*domain.Session, error) {
+     fen = strings.TrimSpace(fen)
+    if fen == "" {
+        fen = standardFEN
     }
+
+    snap, err := s.rules.NewGameFromFEN(fen)
     if err != nil {
         return nil, err
     }
@@ -67,7 +68,7 @@ func (s *Service) NewGame(fen string) (*domain.Session, error) {
             ID:       newID(),
             Snapshot: snap,
             Moves:    []string{},
-            StartFEN: fen, // store it here
+            StartFEN: fen,
         },
         AnalysisCache: map[analysisKey][]domain.AnalysisLine{},
     }

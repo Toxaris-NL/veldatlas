@@ -348,9 +348,15 @@ async function onMoveInput(e) {
             );
             return false;
         }
-        await playMove(`${e.squareFrom}${e.squareTo}${e.promotion || ""}`);
         board.removeMarkers(MARKER_TYPE.dot);
-        return true;
+
+    try {
+        await playMove(`${e.squareFrom}${e.squareTo}${e.promotion || ""}`);
+        return true;   // accept: board stays in new position
+    } catch (err) {
+        console.error("Move rejected:", err);
+        return false;  // reject: cm-chessboard snaps piece back
+    }
     }
 
     return true;

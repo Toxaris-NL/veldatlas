@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -14,7 +15,6 @@ import (
 	"github.com/Toxaris-Nl/veldatlas/internal/config"
 	"github.com/Toxaris-Nl/veldatlas/internal/domain"
 	"github.com/Toxaris-Nl/veldatlas/internal/service"
-
 )
 
 // API owns the handler methods and the application service dependency.
@@ -221,6 +221,7 @@ func (api *API) handleMove(w http.ResponseWriter, r *http.Request, id string) {
 
     ss, err := api.svc.Play(id, body.Move)
     if err != nil {
+        log.Printf("Play error for id=%s move=%s: %v", id, body.Move, err)
         writeServiceError(w, err)
         return
     }

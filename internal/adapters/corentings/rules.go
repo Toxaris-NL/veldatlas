@@ -80,19 +80,22 @@ func (a *RulesAdapter) LoadPGN(raw string) (domain.Replay, error) {
 	replay := chess.NewGame()
 	frames = append(frames, snapshotFromGame(replay, headers, nil))
 	moves := parsed.Moves()
+	algNotation := chess.AlgebraicNotation{}
 	notation := chess.UCINotation{}
 	uciMoves := make([]string, 0, len(moves))
 	labels := make([]string, 0, len(moves))
+
 	for _, mv := range moves {
-		uci := notation.Encode(replay.Position(), mv)
-		uciMoves = append(uciMoves, uci)
-		labels = append(labels, uci)
-		if err := replay.PushMove(uci, nil); err != nil {
-			return domain.Replay{}, err
-		}
-		frames = append(frames, snapshotFromGame(replay, headers, uciMoves))
-		frames[len(frames)-1].MoveLabels = append([]string(nil), labels...)
-	}
+    uci := notation.Encode(replay.Position(), mv)
+    san := algNotation.Encode(replay.Position(), mv)
+    uciMoves = append(uciMoves, uci)
+    labels = append(labels, uci)
+    if err := replay.PushMove(san, nil); err != nil {
+        return domain.Replay{}, err
+    }
+    frames = append(frames, snapshotFromGame(replay, headers, uciMoves))
+    frames[len(frames)-1].MoveLabels = append([]string(nil), labels...)
+}
 	return domain.Replay{Headers: headers, Frames: frames}, nil
 }
 
@@ -107,12 +110,32 @@ func (a *RulesAdapter) replayFrom(startFEN string, moves []string) (*chess.Game,
 	} else {
 		g = chess.NewGame()
 	}
+
+	
+algNotation := chess.AlgebraicNotation{}
+
 	for _, mv := range moves {
-		if err := g.PushMove(mv, nil); err != nil {
-			return nil, err
-		}
-	}
-	return g, nil
+    legal, err := uciToMove(g, mv)
+    if err != nil {
+        return nil, err
+    }
+    san := algNotation.Encode(g.Position(), legal)
+    if err := g.PushMove(san, nil); err != nil {
+        return nil, fmt.Errorf("pushMove %q (from UCI %q): %w", san, mv, err)
+    }
+}
+return g, nil
+}
+
+func uciToMove(g *chess.Game, uci string) (*chess.Move, error) {
+    notation := chess.UCINotation{}
+    valid := g.ValidMoves()
+    for i := range valid {
+        if notation.Encode(g.Position(), &valid[i]) == uci {
+            return &valid[i], nil
+        }
+    }
+    return nil, fmt.Errorf("no legal move matches UCI %q", uci)
 }
 
 func snapshotFromGame(g *chess.Game, headers map[string]string, moves []string) domain.Snapshot {
