@@ -124,6 +124,9 @@ func (s *Service) Play(id, move string) (*domain.Session, error) {
     }
 
     moves := append(append([]string(nil), st.Session.Moves...), move)
+
+    fmt.Printf("DEBUG Play: id=%s startFEN=%q moves=%v\n", id, st.Session.StartFEN, moves)
+    
     snap, err := s.rules.ApplyMoves(moves, st.Session.StartFEN)
     if err != nil {
         s.mu.Unlock()
