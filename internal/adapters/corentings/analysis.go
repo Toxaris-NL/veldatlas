@@ -1,7 +1,6 @@
 package corentings
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,8 +24,29 @@ func (a *AnalysisAdapter) Analyze(snapshot domain.Snapshot, engine config.Engine
 	if err := eng.Run(a.initCommands(engine, req)...); err != nil { return nil, err }
 	if err := eng.Run(uci.CmdPosition{Position: buildPosition(snapshot)}, a.goCommand(req, engine)); err != nil { return nil, err }
 	res := eng.SearchResults()
-	line := domain.AnalysisLine{Engine: req.Engine, Raw: fmt.Sprintf("%+v", res)}
-	if res.BestMove != nil { line.BestMove = res.BestMove.String() }
+
+	line := domain.AnalysisLine{Engine: req.Engine}
+
+	if res.BestMove != nil {
+		line.BestMove = chess.UCINotation{}.Encode(nil, res.BestMove)
+	}
+	if res.Ponder != nil {
+		line.Ponder = chess.UCINotation{}.Encode(nil, res.Ponder)
+	}
+
+	line.Depth   = res.Info.Depth
+	line.ScoreCP = res.Info.Score.CP
+	line.Mate    = res.Info.Score.Mate
+
+	if len(res.Info.PV) > 0 {
+		notation := chess.UCINotation{}
+		pvStrings := make([]string, 0, len(res.Info.PV))
+		for _, mv := range res.Info.PV {
+			pvStrings = append(pvStrings, notation.Encode(nil, mv))
+		}
+		line.PV = pvStrings
+	}
+
 	return []domain.AnalysisLine{line}, nil
 }
 

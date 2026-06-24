@@ -38,14 +38,14 @@ type AnalysisRequest struct {
 }
 
 type AnalysisLine struct {
-    Engine   string   `json:"engine"`
-    BestMove string   `json:"bestMove,omitempty"`
-    ScoreCP  int      `json:"scoreCp,omitempty"`
-    Mate     int      `json:"mate,omitempty"`
-    PV       []string `json:"pv,omitempty"`
-    Depth    int      `json:"depth,omitempty"`
-    Raw      string   `json:"raw,omitempty"`
-    Cached   bool     `json:"cached,omitempty"`
+	Engine   string   `json:"engine"`
+	BestMove string   `json:"bestMove,omitempty"`
+	Ponder   string   `json:"ponder,omitempty"`
+	ScoreCP  int      `json:"scoreCp,omitempty"`
+	Mate     int      `json:"mate,omitempty"`
+	PV       []string `json:"pv,omitempty"`
+	Depth    int      `json:"depth,omitempty"`
+	Cached   bool     `json:"cached,omitempty"`
 }
 
 type BookRecommendation struct {

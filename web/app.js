@@ -817,26 +817,125 @@ async function newVsEngine(config = null) {
     pendingEngineStartFEN = "";
 }
 
+function formatScore(score) {
+    if (!score) return "";
+    if (score.Mate !== 0) return score.Mate > 0 ? `#${score.Mate}` : `#${score.Mate}`;
+    const cp = (score.CP / 100).toFixed(2);
+    return score.CP >= 0 ? `+${cp}` : `${cp}`;
+}
+
+function formatPV(pvMoves) {
+    if (!pvMoves?.length) return "";
+    const preview = pvMoves.slice(0, 8);
+    let result = "";
+    preview.forEach((mv, i) => {
+        if (i % 2 === 0) result += `${Math.floor(i / 2) + 1}. `;
+        result += mv + " ";
+    });
+    return result.trim();
+}
+
 async function loadRecommendations() {
     if (!currentGame?.id) return;
     const engine = currentSettings?.ui?.defaultAnalysisEngine || "stockfish";
     const difficulty = "medium";
     const topN = 5;
     const panel = await api(`/api/game/${currentGame.id}/recommendations?engine=${encodeURIComponent(engine)}&difficulty=${encodeURIComponent(difficulty)}&topN=${encodeURIComponent(topN)}`);
-    const lines = ["Book"];
-    if (!panel.book?.length) lines.push("  - no book suggestions");
-    else panel.book.forEach((item) => lines.push(`  - ${item.move} | weight=${item.weight} | ${Number(item.percentage).toFixed(2)}%`));
-    lines.push("");
-    lines.push("Engine");
-    if (!panel.engine?.length) lines.push("  - no engine suggestion");
-    else panel.engine.forEach((item) => {
-        let line = `  - ${item.engine}: ${item.bestMove || "(no move)"}`;
-        if (item.cached) line += " [cached]";
-        lines.push(line);
-        if (item.raw) lines.push(`    raw: ${item.raw}`);
+
+    // --- Recommendations panel ---
+    const recEl = els.recommendations;
+    recEl.innerHTML = "";
+
+    // Book section
+    const bookHeader = document.createElement("div");
+    bookHeader.className = "rec-section-header";
+    bookHeader.textContent = "📖 Opening Book";
+    recEl.appendChild(bookHeader);
+
+    if (!panel.book?.length) {
+        const empty = document.createElement("div");
+        empty.className = "rec-empty";
+        empty.textContent = "No book suggestions for this position.";
+        recEl.appendChild(empty);
+    } else {
+        panel.book.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "rec-card";
+            card.innerHTML = `
+                <span class="rec-move">${item.move}</span>
+                <span class="rec-meta">${Number(item.percentage).toFixed(1)}% of games</span>
+                <span class="rec-weight muted">weight ${item.weight}</span>
+            `;
+            recEl.appendChild(card);
+        });
+    }
+
+    // Engine section
+    const engHeader = document.createElement("div");
+    engHeader.className = "rec-section-header";
+    engHeader.textContent = "🤖 Engine";
+    recEl.appendChild(engHeader);
+
+    if (!panel.engine?.length) {
+        const empty = document.createElement("div");
+        empty.className = "rec-empty";
+        empty.textContent = "No engine suggestion.";
+        recEl.appendChild(empty);
+    } else {
+        panel.engine.forEach(item => {
+    const score = item.mate !== 0
+        ? (item.mate > 0 ? `#${item.mate}` : `#${item.mate}`)
+        : item.scoreCp !== undefined
+            ? (item.scoreCp >= 0 ? `+${(item.scoreCp/100).toFixed(2)}` : `${(item.scoreCp/100).toFixed(2)}`)
+            : "";
+    const pv = (item.pv || []).slice(0, 8).map((mv, i) =>
+        (i % 2 === 0 ? `${Math.floor(i/2)+1}. ` : "") + mv
+    ).join(" ");
+    const ponder = item.ponder ? `Expected reply: ${item.ponder}` : "";
+    const depth = item.depth ? `depth ${item.depth}` : "";
+
+    const card = document.createElement("div");
+    card.className = "rec-card engine-card";
+    card.innerHTML = `
+        <div class="rec-card-top">
+            <span class="rec-move">${item.bestMove || "—"}</span>
+            ${score ? `<span class="rec-score">${score}</span>` : ""}
+            ${item.cached ? `<span class="rec-cached">cached</span>` : ""}
+        </div>
+        ${ponder ? `<div class="rec-ponder muted">${ponder}</div>` : ""}
+        ${pv ? `<div class="rec-pv muted">Line: ${pv}</div>` : ""}
+        ${depth ? `<div class="rec-meta muted">${depth}</div>` : ""}
+    `;
+    recEl.appendChild(card);
+        });
+    }
+
+    // --- Analysis panel ---
+    const anaEl = els.analysis;
+    anaEl.innerHTML = "";
+
+    if (!panel.engine?.length) {
+        anaEl.textContent = "No engine analysis.";
+        return;
+    }
+
+    panel.engine.forEach(item => {
+        const info = item.info || {};
+        const score = formatScore(info.Score);
+        const pv = formatPV(info.PV);
+
+        const block = document.createElement("div");
+        block.className = "analysis-block";
+        block.innerHTML = `
+            <div class="analysis-header">
+                <span class="rec-move">${item.engine}: ${item.bestMove || "—"}</span>
+                ${score ? `<span class="rec-score">${score}</span>` : ""}
+            </div>
+            ${pv ? `<div class="analysis-pv">Line: ${pv}</div>` : ""}
+            ${info.Depth ? `<div class="muted">Depth ${info.Depth} · Sel ${info.Seldepth || "?"} · ${info.Time || ""} · ${info.NPS ? (info.NPS/1000).toFixed(0)+"k nps" : ""}</div>` : ""}
+        `;
+        anaEl.appendChild(block);
     });
-    els.recommendations.textContent = lines.join("\n");
-    els.analysis.textContent = panel.engine?.length ? JSON.stringify(panel.engine, null, 2) : "No engine analysis.";
 }
 
 function renderSession(session) {

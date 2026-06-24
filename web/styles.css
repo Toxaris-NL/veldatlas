@@ -489,3 +489,16 @@ input.invalid {
         flex-direction: column;
     }
 }
+
+.rec-section-header { font-weight: bold; margin: 8px 0 4px; font-size: 0.85em; text-transform: uppercase; opacity: 0.6; }
+.rec-card { padding: 6px 8px; margin-bottom: 4px; border-radius: 6px; background: var(--panel-bg, #f5f5f5); border: 1px solid var(--border, #ddd); }
+.rec-card-top { display: flex; align-items: center; gap: 8px; }
+.rec-move { font-weight: bold; font-family: monospace; font-size: 1.05em; }
+.rec-score { font-weight: bold; color: var(--accent, #2a7); }
+.rec-cached { font-size: 0.75em; opacity: 0.5; }
+.rec-ponder, .rec-pv, .rec-meta { font-size: 0.8em; margin-top: 2px; }
+.rec-empty { opacity: 0.5; font-size: 0.85em; padding: 4px 0; }
+.muted { opacity: 0.6; }
+.analysis-block { margin-bottom: 10px; padding: 8px; border-radius: 6px; background: var(--panel-bg, #f5f5f5); border: 1px solid var(--border, #ddd); }
+.analysis-header { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.analysis-pv { font-size: 0.82em; font-family: monospace; margin-bottom: 2px; }
